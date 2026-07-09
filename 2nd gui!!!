@@ -1,0 +1,957 @@
+-- === мМОЙ МАЛВЕЙР ГУИ РОБИТт! :) ===
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local MUSIC_ID_JUMPSTYLE = "1839246711"
+local MUSIC_ID_REALM = "1841647093"
+local IMAGE_ID_SKYBOX_1 = "83781891925719"
+local IMAGE_ID_SKYBOX_2 = "82846041725846"
+local IMAGE_ID_SKYBOX_3 = "103165498801167"
+local IMAGE_ID_DECAL_1 = "83781891925719"
+local IMAGE_ID_DECAL_2 = "82846041725846"
+local IMAGE_ID_DECAL_3 = "103165498801167"
+local IMAGE_ID_AVATAR = "93991927920682"
+local IMAGE_ID_REALM_DECAL = "103165498801167"
+local IMAGE_ID_PARTICLES = "94717848994618"
+local SCREAMER_ID = "120605396563126"
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MalwareGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 464, 0, 850)
+mainFrame.Position = UDim2.new(0.5, -232, 0.5, -425)
+mainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mainFrame.BackgroundTransparency = 0
+mainFrame.BorderSizePixel = 3
+mainFrame.BorderColor3 = Color3.fromRGB(0, 100, 50)
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 47)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+title.BackgroundTransparency = 0
+title.Text = "MALWARE GUI v1.0"
+title.TextColor3 = Color3.fromRGB(0, 180, 80)
+title.TextSize = 40
+title.Font = Enum.Font.SourceSans
+title.Parent = mainFrame
+
+local musicLabel = Instance.new("TextLabel")
+musicLabel.Size = UDim2.new(0, 200, 0, 22)
+musicLabel.Position = UDim2.new(0.25, 0, 0.06, 0)
+musicLabel.BackgroundTransparency = 1
+musicLabel.Text = "music scripts"
+musicLabel.TextColor3 = Color3.fromRGB(0, 180, 80)
+musicLabel.TextSize = 30
+musicLabel.Font = Enum.Font.SourceSans
+musicLabel.Parent = mainFrame
+
+local visualLabel = Instance.new("TextLabel")
+visualLabel.Size = UDim2.new(0, 443, 0, 22)
+visualLabel.Position = UDim2.new(0, 0, 0.30, 0)
+visualLabel.BackgroundTransparency = 1
+visualLabel.Text = "visual scripts"
+visualLabel.TextColor3 = Color3.fromRGB(0, 180, 80)
+visualLabel.TextSize = 30
+visualLabel.Font = Enum.Font.SourceSans
+visualLabel.Parent = mainFrame
+
+local adminLabel = Instance.new("TextLabel")
+adminLabel.Size = UDim2.new(0, 473, 0, 22)
+adminLabel.Position = UDim2.new(0, 0, 0.78, 0)
+adminLabel.BackgroundTransparency = 1
+adminLabel.Text = "hd admin scripts"
+adminLabel.TextColor3 = Color3.fromRGB(0, 180, 80)
+adminLabel.TextSize = 30
+adminLabel.Font = Enum.Font.SourceSans
+adminLabel.Parent = mainFrame
+
+local function createMusicBtn(text, xPos, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 113, 0, 34)
+    btn.Position = UDim2.new(xPos, 0, yPos, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.SourceSans
+    btn.Parent = mainFrame
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local function createBtn(text, xPos, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 113, 0, 34)
+    btn.Position = UDim2.new(xPos, 0, yPos, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    btn.TextSize = 14
+    btn.Font = Enum.Font.SourceSans
+    btn.Parent = mainFrame
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+local function getPlayers()
+    local list = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then table.insert(list, plr) end
+    end
+    return list
+end
+
+local function getCharacter(plr)
+    return plr and plr.Character
+end
+
+local function cmd(command)
+    local cmdRemote = ReplicatedStorage:FindFirstChild("HDAdminHDClient")
+    if cmdRemote then
+        pcall(function()
+            cmdRemote.Signals.RequestCommandSilent:InvokeServer(command)
+        end)
+    end
+end
+
+local currentSound = nil
+
+local function stopCurrentMusic()
+    if currentSound then
+        pcall(function()
+            currentSound:Stop()
+            currentSound:Destroy()
+        end)
+        currentSound = nil
+    end
+end
+
+local function playMusic(soundId, pitch)
+    stopCurrentMusic()
+    if soundId == "" then return end
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://" .. soundId
+    sound.Volume = 0.5
+    sound.Looped = true
+    sound.Pitch = pitch or 1
+    sound.Parent = SoundService
+    pcall(function() sound:Play() end)
+    currentSound = sound
+end
+
+local function playJumpstyle()
+    playMusic(MUSIC_ID_JUMPSTYLE, 1)
+end
+
+local function playOmfgHello()
+    playMusic("86393146538796", 0.1)
+end
+
+local function playPiraten()
+    playMusic("73002098096282", 0.1)
+end
+
+local function playRealmMusic()
+    playMusic(MUSIC_ID_REALM, 1)
+end
+
+local function playWindOfTheFjords()
+    playMusic("93932484780481", 0.1)
+end
+
+local function playLiftOff()
+    playMusic("94284750410104", 0.1)
+end
+
+local function stopMusic()
+    stopCurrentMusic()
+end
+
+local function skybox1()
+    if IMAGE_ID_SKYBOX_1 == "" then return end
+    for _, obj in Lighting:GetChildren() do if obj:IsA("Sky") then obj:Destroy() end end
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.SkyboxDn = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.SkyboxFt = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.SkyboxLf = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.SkyboxRt = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.SkyboxUp = "rbxassetid://" .. IMAGE_ID_SKYBOX_1
+    sky.Parent = Lighting
+end
+
+local function skybox2()
+    if IMAGE_ID_SKYBOX_2 == "" then return end
+    for _, obj in Lighting:GetChildren() do if obj:IsA("Sky") then obj:Destroy() end end
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.SkyboxDn = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.SkyboxFt = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.SkyboxLf = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.SkyboxRt = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.SkyboxUp = "rbxassetid://" .. IMAGE_ID_SKYBOX_2
+    sky.Parent = Lighting
+end
+
+local function skybox3()
+    if IMAGE_ID_SKYBOX_3 == "" then return end
+    for _, obj in Lighting:GetChildren() do if obj:IsA("Sky") then obj:Destroy() end end
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.SkyboxDn = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.SkyboxFt = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.SkyboxLf = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.SkyboxRt = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.SkyboxUp = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+    sky.Parent = Lighting
+end
+
+
+local function decalSpam1()
+    if IMAGE_ID_DECAL_1 == "" then return end
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            for _, face in ipairs({Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right}) do
+                local d = Instance.new("Decal")
+                d.Texture = "rbxassetid://" .. IMAGE_ID_DECAL_1
+                d.Face = face
+                d.Parent = v
+            end
+        end
+    end
+end
+
+local function decalSpam2()
+    if IMAGE_ID_DECAL_2 == "" then return end
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            for _, face in ipairs({Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right}) do
+                local d = Instance.new("Decal")
+                d.Texture = "rbxassetid://" .. IMAGE_ID_DECAL_2
+                d.Face = face
+                d.Parent = v
+            end
+        end
+    end
+end
+
+local function decalSpam3()
+    if IMAGE_ID_DECAL_3 == "" then return end
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            for _, face in ipairs({Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right}) do
+                local d = Instance.new("Decal")
+                d.Texture = "rbxassetid://" .. IMAGE_ID_DECAL_3
+                d.Face = face
+                d.Parent = v
+            end
+        end
+    end
+end
+
+local function colourSpam()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.BrickColor = BrickColor.random()
+        end
+    end
+end
+
+local function unanchorAll()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") or v:IsA("UnionOperation") then
+            spawn(function() v.Anchored = false end)
+        end
+    end
+end
+
+local function effect666()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.BrickColor = BrickColor.Black()
+            v.Material = Enum.Material.SmoothPlastic
+            local fire = Instance.new("Fire")
+            fire.Size = 15
+            fire.Heat = 20
+            fire.Parent = v
+            local light = Instance.new("PointLight")
+            light.Color = Color3.fromRGB(255, 0, 0)
+            light.Range = 15
+            light.Brightness = 5
+            light.Parent = v
+            local box = Instance.new("SelectionBox")
+            box.Adornee = v
+            box.Color = BrickColor.Red()
+            box.Parent = v
+        end
+    end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("Head")
+            if root then
+                local fire = Instance.new("Fire")
+                fire.Size = 15
+                fire.Heat = 20
+                fire.Parent = root
+            end
+        end
+    end
+end
+
+local function spawnParticles()
+    if IMAGE_ID_PARTICLES == "" then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    local leftLeg = char:FindFirstChild("Left Leg") or char:FindFirstChild("LeftLowerLeg")
+    local rightLeg = char:FindFirstChild("Right Leg") or char:FindFirstChild("RightLowerLeg")
+    
+    if not leftLeg and not rightLeg then
+        return
+    end
+    
+    local function createParticlesOnLeg(leg)
+        if not leg then return end
+        for _, v in leg:GetChildren() do
+            if v:IsA("ParticleEmitter") then
+                v:Destroy()
+            end
+        end
+        
+        local att = Instance.new("Attachment")
+        att.Parent = leg
+        att.Position = Vector3.new(0, -0.5, 0)
+        
+        local p = Instance.new("ParticleEmitter")
+        p.Parent = att
+        p.Texture = "rbxassetid://" .. IMAGE_ID_PARTICLES
+        p.Rate = 50
+        p.Lifetime = NumberRange.new(1, 3)
+        p.SpreadAngle = Vector2.new(180, 180)
+        p.VelocityInheritance = 0.1
+        p.Speed = NumberRange.new(2, 6)
+        p.Size = NumberSequence.new(2)
+        p.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1)})
+        p.Color = ColorSequence.new(Color3.fromRGB(0, 180, 80))
+        p.Enabled = true
+    end
+    
+    createParticlesOnLeg(leftLeg)
+    createParticlesOnLeg(rightLeg)
+end
+
+local function rainFire()
+    for i = 1, 30 do
+        spawn(function()
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(2, 2, 2)
+            part.Anchored = false
+            part.CanCollide = true
+            part.Transparency = 0.3
+            part.BrickColor = BrickColor.Red()
+            part.Material = Enum.Material.Neon
+            part.Position = Vector3.new(math.random(-100, 100), math.random(50, 150), math.random(-100, 100))
+            part.Parent = Workspace
+            local fire = Instance.new("Fire")
+            fire.Size = 5
+            fire.Heat = 10
+            fire.Parent = part
+            while part and part.Parent do
+                task.wait(0.05)
+                part.Position = part.Position + Vector3.new(0, -2, 0)
+                if part.Position.Y < -10 then
+                    part:Destroy()
+                    break
+                end
+            end
+        end)
+        task.wait(0.05)
+    end
+end
+
+local function rainingBalls()
+    if IMAGE_ID_DECAL_1 == "" then return end
+    for i = 1, 20 do
+        local size = math.random(5, 30)
+        local part = Instance.new("Part")
+        part.Shape = Enum.PartType.Ball
+        part.Size = Vector3.new(size, size, size)
+        part.Position = Vector3.new(math.random(-100, 100), math.random(80, 200), math.random(-100, 100))
+        part.Anchored = false
+        part.CanCollide = true
+        part.Material = Enum.Material.SmoothPlastic
+        part.Transparency = 0
+        part.BrickColor = BrickColor.Green()
+        part.Parent = Workspace
+        for _, face in ipairs({Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom, Enum.NormalId.Left, Enum.NormalId.Right}) do
+            local d = Instance.new("Decal")
+            d.Texture = "rbxassetid://" .. IMAGE_ID_DECAL_1
+            d.Face = face
+            d.Parent = part
+        end
+        spawn(function()
+            while part and part.Parent do
+                task.wait(0.05)
+                part.Position = part.Position + Vector3.new(0, -3, 0)
+                if part.Position.Y < -10 then
+                    part:Destroy()
+                    break
+                end
+            end
+        end)
+        task.wait(0.2)
+    end
+end
+
+local function discoMode()
+    local ColorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
+    local Counter = 0
+    function zigzag(X) return math.acos(math.cos(X * math.pi)) / math.pi end
+    Lighting.TimeOfDay = "12:00"
+    spawn(function()
+        while wait(0.1) do
+            ColorCorrection.TintColor = Color3.fromHSV(zigzag(Counter), 1, 1)
+            Lighting.Ambient = Color3.fromHSV(zigzag(Counter), 1, 1)
+            Counter = Counter + 0.01
+        end
+    end)
+end
+
+local function randomColors()
+    for _, v in ipairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.BrickColor = BrickColor.random()
+        end
+    end
+end
+
+local function malwareFace()
+    if IMAGE_ID_PARTICLES == "" then return end
+    
+    for _, plr in ipairs(Players:GetPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            local head = char:FindFirstChild("Head")
+            if head then
+                for _, v in head:GetChildren() do
+                    if v:IsA("BillboardGui") and v.Name == "MalwareFaceGUI" then
+                        v:Destroy()
+                    end
+                end
+                
+                local gui = Instance.new("BillboardGui")
+                gui.Name = "MalwareFaceGUI"
+                gui.Parent = head
+                gui.Adornee = head
+                gui.Size = UDim2.new(2.5, 0, 2.5, 0)
+                gui.StudsOffset = Vector3.new(0, 0.2, 0)
+                gui.AlwaysOnTop = true
+                
+                local image = Instance.new("ImageLabel")
+                image.Image = "rbxassetid://" .. IMAGE_ID_PARTICLES
+                image.Size = UDim2.new(1, 0, 1, 0)
+                image.Position = UDim2.new(0, 0, 0, 0)
+                image.BackgroundTransparency = 1
+                image.Parent = gui
+                
+                head.Transparency = 1
+            end
+        end
+    end
+end
+
+local function jumpScare()
+    if SCREAMER_ID == "" then return end
+    
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            spawn(function()
+                if plr.PlayerGui:FindFirstChild("Screamer") then
+                    return
+                end
+                
+                local gui = Instance.new("ScreenGui")
+                gui.Name = "Screamer"
+                gui.Parent = plr.PlayerGui
+                
+                local image = Instance.new("ImageLabel")
+                image.Image = "rbxassetid://" .. SCREAMER_ID
+                image.Size = UDim2.new(1, 0, 1, 0)
+                image.Position = UDim2.new(0, 0, 0, 0)
+                image.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                image.BackgroundTransparency = 0
+                image.ScaleType = Enum.ScaleType.Fit
+                image.Parent = gui
+                
+                if TUBERS93_LAUGH and TUBERS93_LAUGH ~= "" then
+                    local sound = Instance.new("Sound")
+                    sound.SoundId = "rbxassetid://" .. TUBERS93_LAUGH
+                    sound.Volume = 10
+                    sound.Looped = true
+                    sound.Parent = gui
+                    pcall(function() sound:Play() end)
+                end
+                
+                task.wait(5)
+                
+                for i = 0, 1, 0.05 do
+                    image.ImageTransparency = i
+                    task.wait(0.02)
+                end
+                
+                gui:Destroy()
+            end)
+        end
+    end
+end
+
+local function killAllVisual()
+    for _, plr in ipairs(getPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+            if root then
+                for i = 1, 20 do
+                    local part = Instance.new("Part")
+                    part.Shape = Enum.PartType.Ball
+                    part.Size = Vector3.new(1, 1, 1)
+                    part.Position = root.Position + Vector3.new(math.random(-10, 10), math.random(-5, 15), math.random(-10, 10))
+                    part.BrickColor = BrickColor.Red()
+                    part.Material = Enum.Material.Neon
+                    part.Anchored = true
+                    part.Parent = Workspace
+                    local fire = Instance.new("Fire")
+                    fire.Size = 5
+                    fire.Heat = 10
+                    fire.Parent = part
+                    spawn(function()
+                        task.wait(0.5)
+                        part:Destroy()
+                    end)
+                end
+            end
+        end
+    end
+end
+
+local function fireAllVisual()
+    for _, plr in ipairs(getPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+            if root then
+                local fire = Instance.new("Fire")
+                fire.Size = 15
+                fire.Heat = 20
+                fire.Parent = root
+                task.wait(0.3)
+            end
+        end
+    end
+end
+
+local function antiSkidVisual()
+    for _, plr in ipairs(getPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            for _, v in ipairs(char:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.Transparency = 0.5
+                    spawn(function()
+                        task.wait(2)
+                        v.Transparency = 0
+                    end)
+                end
+            end
+        end
+    end
+end
+
+local function createMalwareRealm()
+    for _, v in ipairs(Workspace:GetChildren()) do
+        if v:IsA("BasePart") or v:IsA("Model") or v:IsA("Folder") then
+            local isPlayer = false
+            local parent = v.Parent
+            while parent do
+                if parent == LocalPlayer.Character then
+                    isPlayer = true
+                    break
+                end
+                parent = parent.Parent
+            end
+            if not isPlayer and v ~= LocalPlayer.Character then
+                pcall(function() v:Destroy() end)
+            end
+        end
+    end
+    task.wait(0.5)
+    
+    Lighting.Ambient = Color3.fromRGB(20, 20, 30)
+    Lighting.Brightness = 0.3
+    Lighting.ClockTime = 0
+    
+    if IMAGE_ID_SKYBOX_3 ~= "" then
+        for _, obj in Lighting:GetChildren() do
+            if obj:IsA("Sky") then obj:Destroy() end
+        end
+        local sky = Instance.new("Sky")
+        sky.SkyboxBk = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.SkyboxDn = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.SkyboxFt = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.SkyboxLf = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.SkyboxRt = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.SkyboxUp = "rbxassetid://" .. IMAGE_ID_SKYBOX_3
+        sky.Parent = Lighting
+    end
+    
+    local floor = Instance.new("Part")
+    floor.Size = Vector3.new(512, 5, 512)
+    floor.Position = Vector3.new(0, -2.5, 0)
+    floor.Anchored = true
+    floor.Material = Enum.Material.Concrete
+    floor.BrickColor = BrickColor.Gray()
+    floor.Parent = Workspace
+    
+    local spawn = Instance.new("Part")
+    spawn.Size = Vector3.new(20, 0.5, 20)
+    spawn.Position = Vector3.new(0, 0, 0)
+    spawn.Anchored = true
+    spawn.BrickColor = BrickColor.Green()
+    spawn.Material = Enum.Material.Neon
+    spawn.Transparency = 0.3
+    spawn.Parent = Workspace
+    if IMAGE_ID_REALM_DECAL ~= "" then
+        local decal = Instance.new("Decal")
+        decal.Texture = "rbxassetid://" .. IMAGE_ID_REALM_DECAL
+        decal.Face = Enum.NormalId.Top
+        decal.Parent = spawn
+    end
+    
+    local char = LocalPlayer.Character
+    if char then
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = CFrame.new(0, 3, 0)
+        end
+    end
+    
+    local sign = Instance.new("Part")
+    sign.Size = Vector3.new(30, 15, 1)
+    sign.Position = Vector3.new(0, 7.5, -20)
+    sign.Anchored = true
+    sign.BrickColor = BrickColor.Black()
+    sign.Material = Enum.Material.SmoothPlastic
+    sign.Parent = Workspace
+    sign.CFrame = sign.CFrame * CFrame.Angles(0, math.rad(180), 0)
+    
+    for _, offset in ipairs({{0, 7.5, 0, 30.5, 0.5, 1.2}, {0, -7.5, 0, 30.5, 0.5, 1.2}, {-15, 0, 0, 0.5, 15.5, 1.2}, {15, 0, 0, 0.5, 15.5, 1.2}}) do
+        local border = Instance.new("Part")
+        border.Size = Vector3.new(offset[4], offset[5], offset[6])
+        border.Position = sign.Position + Vector3.new(offset[1], offset[2], offset[3])
+        border.Anchored = true
+        border.BrickColor = BrickColor.Green()
+        border.Material = Enum.Material.Neon
+        border.Transparency = 0.2
+        border.Parent = Workspace
+        border.CFrame = border.CFrame * CFrame.Angles(0, math.rad(180), 0)
+    end
+    
+    local surfaceGui = Instance.new("SurfaceGui")
+    surfaceGui.Face = Enum.NormalId.Front
+    surfaceGui.Parent = sign
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.Text = "THIS GAME WAS HACKED BY MALWARE\n\nIF YOU LEAVE THIS PLACE YOU WILL DIE\n\nSTAY CALM\n\nPOWERED BY MALWARE GUI"
+    textLabel.TextSize = 22
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextWrapped = true
+    textLabel.TextScaled = true
+    textLabel.Parent = surfaceGui
+    
+    playRealmMusic()
+end
+
+local function btools()
+    cmd(";btools")
+end
+
+local function godMode()
+    cmd(";god")
+end
+
+local function walkspeed75()
+    cmd(";speed me 75")
+end
+
+local function killAll()
+    cmd(";kill all")
+end
+
+local function message()
+    cmd(";sm MALWARE WAS HERE")
+end
+
+local function hint()
+    cmd(";sh MALWARE WAS HERE")
+end
+
+local function billboardGuiAll()
+    cmd(";title all MALWARE WAS HERE")
+end
+
+local function becomeTubers93()
+    cmd(";char me tubers93_meen")
+    cmd(";name me Tubers93")
+end
+
+local function becomeJohnDoe()
+    local chara = LocalPlayer.Character
+    if not chara then return end
+
+    local ch = chara:GetChildren()
+    for i = 1, #ch do
+        if ch[i].Name == "Torso" then
+            ch[i].Transparency = 1
+        elseif ch[i].Name == "Head" then
+            if ch[i]:FindFirstChild("face") then
+                ch[i].face.Transparency = 1
+            end
+            ch[i].Transparency = 1
+        elseif ch[i].ClassName == "Accessory" or ch[i].ClassName == "Shirt" or ch[i].ClassName == "Pants" or ch[i].ClassName == "ShirtGraphic" then
+            ch[i]:Destroy()
+        end
+    end
+
+    chara["Left Arm"].BrickColor = BrickColor.new("Cool yellow")
+    chara["Right Arm"].BrickColor = BrickColor.new("Cool yellow")
+    chara["Left Leg"].BrickColor = BrickColor.new("Medium blue")
+    chara["Right Leg"].BrickColor = BrickColor.new("Medium blue")
+    chara.Torso.BrickColor = BrickColor.new("Bright yellow")
+
+    local function ScatterEff(part)
+        if not part then return end
+        local eff1 = Instance.new("ParticleEmitter", part)
+        eff1.Size = NumberSequence.new(0.1)
+        eff1.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.9, 0), NumberSequenceKeypoint.new(1, 1)})
+        eff1.LightEmission = 1
+        eff1.Lifetime = NumberRange.new(1)
+        eff1.Speed = NumberRange.new(1)
+        eff1.Rate = 100
+        eff1.VelocitySpread = 10000
+        eff1.Texture = "rbxassetid://347504241"
+        eff1.Color = ColorSequence.new(Color3.new(1, 0, 0))
+        local eff2 = Instance.new("ParticleEmitter", part)
+        eff2.Size = NumberSequence.new(0.1)
+        eff2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.9, 0), NumberSequenceKeypoint.new(1, 1)})
+        eff2.LightEmission = 1
+        eff2.Lifetime = NumberRange.new(1)
+        eff2.Speed = NumberRange.new(1)
+        eff2.Rate = 100
+        eff2.VelocitySpread = 10000
+        eff2.Texture = "rbxassetid://347504259"
+        eff2.Color = ColorSequence.new(Color3.new(1, 0, 0))
+    end
+
+    ScatterEff(chara:FindFirstChild("Left Leg"))
+    ScatterEff(chara:FindFirstChild("Right Leg"))
+
+    for _, obj in Lighting:GetChildren() do
+        if obj:IsA("Sky") then
+            obj:Destroy()
+        end
+    end
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "http://www.roblox.com/asset/?id=18990118848"
+    sky.SkyboxDn = "http://www.roblox.com/asset/?id=18990118848"
+    sky.SkyboxFt = "http://www.roblox.com/asset/?id=18990118848"
+    sky.SkyboxLf = "http://www.roblox.com/asset/?id=18990118848"
+    sky.SkyboxRt = "http://www.roblox.com/asset/?id=18990118848"
+    sky.SkyboxUp = "http://www.roblox.com/asset/?id=18990118848"
+    sky.Parent = Lighting
+    Lighting.Ambient = Color3.fromRGB(255, 0, 0)
+    Lighting.OutdoorAmbient = Color3.fromRGB(255, 0, 0)
+    Lighting.TimeOfDay = "00:00"
+
+    local sound = Instance.new("Sound", chara)
+    sound.SoundId = "rbxassetid://678930213"
+    sound.Volume = 5
+    sound.Looped = true
+    sound:Play()
+
+    local nameTag = Instance.new("BillboardGui", chara)
+    nameTag.Size = UDim2.new(0, 150, 0, 50)
+    nameTag.StudsOffset = Vector3.new(0, 3, 0)
+    nameTag.Adornee = chara:FindFirstChild("Head")
+    local label = Instance.new("TextLabel", nameTag)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "John Doe"
+    label.TextColor3 = Color3.fromRGB(255, 0, 0)
+    label.TextSize = 30
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0
+    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+end
+
+local function titleAll()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            cmd(";title " .. plr.Name .. " Подчиненные MALWARE")
+            task.wait(0.1)
+        end
+    end
+end
+
+local function titleMe()
+    if LocalPlayer.Name == "Sanek_7864792" then
+        cmd(";title me MALWARE ORIGINAL")
+    else
+        cmd(";title me ПОМОЩНИК MALWARE")
+    end
+end
+
+local function becomeMe()
+    local target = getPlayers()[1]
+    if not target then return end
+    local targetChar = getCharacter(target)
+    if not targetChar then return end
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    for _, part in ipairs(myChar:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local targetPart = targetChar:FindFirstChild(part.Name)
+            if targetPart and targetPart:IsA("BasePart") then
+                targetPart.Size = part.Size
+                targetPart.CFrame = part.CFrame
+                targetPart.BrickColor = part.BrickColor
+                targetPart.Material = part.Material
+                targetPart.Transparency = part.Transparency
+            end
+        end
+    end
+    for _, acc in ipairs(myChar:GetChildren()) do
+        if acc:IsA("Accessory") or acc:IsA("Shirt") or acc:IsA("Pants") then
+            local newAcc = acc:Clone()
+            newAcc.Parent = targetChar
+        end
+    end
+end
+
+local function unfireAll()
+    cmd(";unfire all")
+end
+
+local function malwareAvatarAll()
+    if IMAGE_ID_AVATAR == "" then return end
+    print("Malware Avatar All")
+end
+
+local function fireAll()
+    for _, plr in ipairs(getPlayers()) do
+        local char = getCharacter(plr)
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+            if root then
+                local fire = Instance.new("Fire")
+                fire.Size = 15
+                fire.Heat = 20
+                fire.Parent = root
+                task.wait(0.3)
+            end
+        end
+    end
+end
+
+createMusicBtn("jumpstyle", 0, 0.105, playJumpstyle)
+createMusicBtn("omfg hello", 0.243, 0.105, playOmfgHello)
+createMusicBtn("piraten", 0, 0.152, playPiraten)
+createMusicBtn("realm music", 0.243, 0.152, playRealmMusic)
+createMusicBtn("wind of the fjords", 0, 0.199, playWindOfTheFjords)
+createMusicBtn("lift off", 0.243, 0.199, playLiftOff)
+createMusicBtn("stop music", 0.487, 0.105, stopMusic)
+
+createBtn("btools", 0, 0.35, btools)
+createBtn("godmode", 0.243, 0.35, godMode)
+createBtn("walkspeed 75", 0.487, 0.35, walkspeed75)
+createBtn("skybox 1", 0, 0.40, skybox1)
+createBtn("skybox 2", 0.243, 0.40, skybox2)
+createBtn("skybox 3", 0.487, 0.40, skybox3)
+createBtn("decal spam 1", 0, 0.45, decalSpam1)
+createBtn("decal spam 2", 0.243, 0.45, decalSpam2)
+createBtn("decal spam 3", 0.487, 0.45, decalSpam3)
+createBtn("colour spam", 0.730, 0.40, colourSpam)
+createBtn("unanchor", 0.730, 0.45, unanchorAll)
+createBtn("666", 0, 0.50, effect666)
+createBtn("particles", 0.243, 0.50, spawnParticles)
+createBtn("rain fire", 0.487, 0.50, rainFire)
+createBtn("raining balls", 0.730, 0.50, rainingBalls)
+createBtn("jump scare", 0, 0.55, jumpScare)
+createBtn("disco", 0.243, 0.55, discoMode)
+createBtn("random colors", 0.487, 0.55, randomColors)
+createBtn("kill all", 0, 0.60, killAll)
+createBtn("fire all", 0.243, 0.60, fireAll)
+createBtn("anti skid", 0.487, 0.60, antiSkidVisual)
+createBtn("Malware realm", 0.730, 0.55, createMalwareRealm)
+createBtn("Malware face", 0, 0.65, malwareFace)
+
+-- HD ADMIN
+createBtn("message", 0, 0.83, message)
+createBtn("hint", 0, 0.88, hint)
+createBtn("billboard gui all", 0.243, 0.83, billboardGuiAll)
+createBtn("Become tubers93", 0.487, 0.83, becomeTubers93)
+createBtn("Become John Doe", 0.487, 0.88, becomeJohnDoe)
+createBtn("unfire all", 0.730, 0.88, unfireAll)
+createBtn("title all", 0.243, 0.88, titleAll)
+createBtn("title me", 0.243, 0.93, titleMe)
+createBtn("become me", 0, 0.93, becomeMe)
+createBtn("Malware avatar all", 0.730, 0.83, malwareAvatarAll)
+
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+print("💚ВСЕ РАБОТАЕТ, БРАТЬЯ :)")
