@@ -1,0 +1,691 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local InsertService = game:GetService("InsertService")
+
+local player = Players.LocalPlayer
+local mode = "Local"
+local currentTab = "HOME"
+local RemoteEvent = nil
+
+local MY_SCRIPT_CODE = [[
+print("MY SCRIPT LOADED")
+]]
+
+local GREEN = Color3.fromRGB(0, 200, 0)
+local GREEN_TEXT = Color3.fromRGB(0, 255, 100)
+local LIGHT_GREEN = Color3.fromRGB(120, 255, 160)
+local BLACK = Color3.fromRGB(18, 18, 18)
+local DARK = Color3.fromRGB(24, 24, 24)
+local TAB_DARK = Color3.fromRGB(32, 32, 32)
+local TAB_ACTIVE = Color3.fromRGB(20, 20, 20)
+local INPUT = Color3.fromRGB(8, 8, 8)
+local WHITE = Color3.fromRGB(255, 255, 255)
+
+local parentGui = (gethui and gethui()) or CoreGui
+for _, name in ipairs({"Malw Polaria", "MalwareGUI"}) do
+    local old = parentGui:FindFirstChild(name)
+    if old then old:Destroy() end
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "Malw Polaria"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+if syn and syn.protect_gui then
+    pcall(function() syn.protect_gui(gui) end)
+end
+gui.Parent = parentGui
+
+local function round(obj, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 4)
+    c.Parent = obj
+    return c
+end
+
+local function circleRound(obj)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(1, 0)
+    c.Parent = obj
+    return c
+end
+
+local function stroke(obj, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color = GREEN
+    s.Thickness = thickness or 2
+    s.Parent = obj
+    return s
+end
+
+local function makeLabel(parent, text, size, position, font, textSize, color)
+    local label = Instance.new("TextLabel")
+    label.Size = size
+    label.Position = position
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color or WHITE
+    label.Font = font or Enum.Font.Gotham
+    label.TextSize = textSize or 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextYAlignment = Enum.TextYAlignment.Center
+    label.BorderSizePixel = 0
+    label.Parent = parent
+    return label
+end
+
+local function makeOutlineButton(parent, text, size, position)
+    local btn = Instance.new("TextButton")
+    btn.Size = size
+    btn.Position = position
+    btn.BackgroundColor3 = DARK
+    btn.BorderSizePixel = 0
+    btn.Text = text
+    btn.TextColor3 = WHITE
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.AutoButtonColor = true
+    btn.Parent = parent
+    round(btn, 4)
+    return btn
+end
+
+local function makeTabButton(parent, text)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.2, -4, 1, 0)
+    btn.BackgroundColor3 = TAB_DARK
+    btn.BorderSizePixel = 0
+    btn.Text = text
+    btn.TextColor3 = WHITE
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.AutoButtonColor = true
+    btn.Parent = parent
+    round(btn, 3)
+    return btn
+end
+
+local main = Instance.new("Frame")
+main.Name = "Main"
+main.Size = UDim2.new(0, 620, 0, 380)
+main.Position = UDim2.new(0.5, -310, 0.5, -190)
+main.BackgroundColor3 = BLACK
+main.BorderSizePixel = 0
+main.Active = true
+main.ClipsDescendants = true
+main.ZIndex = 10
+main.Parent = gui
+stroke(main, 3)
+round(main, 6)
+
+local topbar = Instance.new("Frame")
+topbar.Name = "Topbar"
+topbar.Size = UDim2.new(1, 0, 0, 34)
+topbar.BackgroundColor3 = DARK
+topbar.BorderSizePixel = 0
+topbar.Active = true
+topbar.ZIndex = 11
+topbar.Parent = main
+
+local title = makeLabel(topbar, "Malw Polaria", UDim2.new(1, -230, 1, 0), UDim2.new(0, 10, 0, 0), Enum.Font.GothamBold, 18, WHITE)
+title.Active = true
+title.ZIndex = 12
+
+local r6Btn = makeOutlineButton(topbar, "R6", UDim2.new(0, 34, 0, 26), UDim2.new(1, -188, 0, 4))
+local r15Btn = makeOutlineButton(topbar, "R15", UDim2.new(0, 42, 0, 26), UDim2.new(1, -150, 0, 4))
+local reBtn = makeOutlineButton(topbar, "RE", UDim2.new(0, 34, 0, 26), UDim2.new(1, -104, 0, 4))
+local minBtn = makeOutlineButton(topbar, "-", UDim2.new(0, 30, 0, 26), UDim2.new(1, -68, 0, 4))
+local closeBtn = makeOutlineButton(topbar, "X", UDim2.new(0, 30, 0, 26), UDim2.new(1, -34, 0, 4))
+r6Btn.ZIndex = 13
+r15Btn.ZIndex = 13
+reBtn.ZIndex = 13
+minBtn.ZIndex = 13
+closeBtn.ZIndex = 13
+
+local draggingMain = false
+local mainDragInput
+local mainDragStart
+local mainStartPos
+
+local function updateMainDrag(input)
+    local delta = input.Position - mainDragStart
+    main.Position = UDim2.new(mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X, mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y)
+end
+
+local function bindMainDrag(obj)
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingMain = true
+            mainDragStart = input.Position
+            mainStartPos = main.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then draggingMain = false end
+            end)
+        end
+    end)
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            mainDragInput = input
+        end
+    end)
+end
+
+bindMainDrag(topbar)
+bindMainDrag(title)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingMain and input == mainDragInput then updateMainDrag(input) end
+end)
+
+local tabbar = Instance.new("Frame")
+tabbar.Name = "Tabs"
+tabbar.Size = UDim2.new(1, -12, 0, 34)
+tabbar.Position = UDim2.new(0, 6, 0, 40)
+tabbar.BackgroundTransparency = 1
+tabbar.ZIndex = 11
+tabbar.Parent = main
+
+local tabLayout = Instance.new("UIListLayout")
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabLayout.Padding = UDim.new(0, 4)
+tabLayout.Parent = tabbar
+
+local content = Instance.new("Frame")
+content.Name = "Content"
+content.Size = UDim2.new(1, -12, 1, -84)
+content.Position = UDim2.new(0, 6, 0, 80)
+content.BackgroundTransparency = 1
+content.ClipsDescendants = true
+content.ZIndex = 11
+content.Parent = main
+
+local tabNames = {"HOME", "SERVER/LOCAL", "SCRIPTS", "EXECUTOR", "OUTPUT"}
+local tabButtons = {}
+local pages = {}
+
+local function makePage(name)
+    local page = Instance.new("Frame")
+    page.Name = name
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundColor3 = BLACK
+    page.BorderSizePixel = 0
+    page.Visible = false
+    page.ZIndex = 11
+    page.Parent = content
+    pages[name] = page
+    return page
+end
+
+for i, name in ipairs(tabNames) do
+    local btn = makeTabButton(tabbar, name)
+    btn.LayoutOrder = i
+    btn.ZIndex = 12
+    tabButtons[name] = btn
+    makePage(name)
+end
+
+local function selectTab(name)
+    currentTab = name
+    for pageName, page in pairs(pages) do page.Visible = pageName == name end
+    for buttonName, button in pairs(tabButtons) do
+        button.TextColor3 = buttonName == name and GREEN_TEXT or WHITE
+        button.BackgroundColor3 = buttonName == name and TAB_ACTIVE or TAB_DARK
+    end
+end
+
+for name, button in pairs(tabButtons) do
+    button.MouseButton1Click:Connect(function() selectTab(name) end)
+end
+
+local outputPage = pages["OUTPUT"]
+local outputFrame = Instance.new("ScrollingFrame")
+outputFrame.Name = "OutputScroll"
+outputFrame.Size = UDim2.new(1, -20, 1, -58)
+outputFrame.Position = UDim2.new(0, 10, 0, 10)
+outputFrame.BackgroundColor3 = INPUT
+outputFrame.BorderSizePixel = 0
+outputFrame.ScrollBarThickness = 5
+outputFrame.ScrollBarImageColor3 = GREEN
+outputFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+outputFrame.ZIndex = 12
+outputFrame.Parent = outputPage
+round(outputFrame, 4)
+
+local outputText = Instance.new("TextLabel")
+outputText.Name = "OutputText"
+outputText.Size = UDim2.new(1, -16, 0, 0)
+outputText.Position = UDim2.new(0, 8, 0, 8)
+outputText.BackgroundTransparency = 1
+outputText.Text = "OUTPUT READY"
+outputText.TextColor3 = GREEN_TEXT
+outputText.Font = Enum.Font.Code
+outputText.TextSize = 14
+outputText.TextXAlignment = Enum.TextXAlignment.Left
+outputText.TextYAlignment = Enum.TextYAlignment.Top
+outputText.TextWrapped = true
+outputText.AutomaticSize = Enum.AutomaticSize.Y
+outputText.ZIndex = 13
+outputText.Parent = outputFrame
+
+local clearLogsBtn = makeOutlineButton(outputPage, "Clear Logs", UDim2.new(0, 120, 0, 36), UDim2.new(0, 10, 1, -40))
+local copyLogsBtn = makeOutlineButton(outputPage, "Copy Logs", UDim2.new(0, 120, 0, 36), UDim2.new(0, 140, 1, -40))
+
+local function updateOutputCanvas()
+    task.defer(function()
+        if not outputText.Parent then return end
+        local height = math.max(outputText.TextBounds.Y + 24, outputFrame.AbsoluteSize.Y)
+        outputFrame.CanvasSize = UDim2.new(0, 0, 0, height)
+        outputFrame.CanvasPosition = Vector2.new(0, math.max(0, height - outputFrame.AbsoluteSize.Y))
+    end)
+end
+
+local function appendOutput(text)
+    outputText.Text = outputText.Text .. "\n" .. tostring(text)
+    updateOutputCanvas()
+end
+
+clearLogsBtn.MouseButton1Click:Connect(function()
+    outputText.Text = "OUTPUT READY"
+    updateOutputCanvas()
+end)
+
+copyLogsBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(outputText.Text)
+        appendOutput("Logs copied")
+    else
+        appendOutput("setclipboard недоступен")
+    end
+end)
+
+local oldPrint = print
+local function stringify(...)
+    local result = {}
+    for i = 1, select("#", ...) do result[i] = tostring(select(i, ...)) end
+    return table.concat(result, "\t")
+end
+
+local function hookedPrint(...)
+    oldPrint(...)
+    appendOutput(stringify(...))
+end
+
+if getgenv then getgenv().print = hookedPrint end
+pcall(function() print = hookedPrint end)
+
+local minimized = false
+local normalSize = UDim2.new(0, 620, 0, 380)
+
+local function applyMinimizeState()
+    main.Size = minimized and UDim2.new(0, 620, 0, 34) or normalSize
+    tabbar.Visible = not minimized
+    content.Visible = not minimized
+    if not minimized then selectTab(currentTab) end
+end
+
+minBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    applyMinimizeState()
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    main.Visible = false
+end)
+
+local circle = Instance.new("TextButton")
+circle.Name = "ToggleCircle"
+circle.Size = UDim2.new(0, 60, 0, 60)
+circle.Position = UDim2.new(0, 24, 0.5, -30)
+circle.BackgroundColor3 = WHITE
+circle.BorderSizePixel = 0
+circle.Text = "+"
+circle.TextColor3 = GREEN
+circle.Font = Enum.Font.GothamBlack
+circle.TextSize = 36
+circle.AutoButtonColor = false
+circle.Active = true
+circle.ZIndex = 1000
+circle.Parent = gui
+circleRound(circle)
+
+local circleDragging = false
+local circleWasDragged = false
+local circleDragInput
+local circleDragStart
+local circleStartPos
+local dragTween
+
+local function tweenCircleTo(pos)
+    if dragTween then dragTween:Cancel() end
+    dragTween = TweenService:Create(circle, TweenInfo.new(0.06, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Position = pos})
+    dragTween:Play()
+end
+
+local function updateCircleDrag(input)
+    local delta = input.Position - circleDragStart
+    if delta.Magnitude > 5 then circleWasDragged = true end
+    tweenCircleTo(UDim2.new(circleStartPos.X.Scale, circleStartPos.X.Offset + delta.X, circleStartPos.Y.Scale, circleStartPos.Y.Offset + delta.Y))
+end
+
+circle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        circleDragging = true
+        circleWasDragged = false
+        circleDragStart = input.Position
+        circleStartPos = circle.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                circleDragging = false
+                task.delay(0.12, function() circleWasDragged = false end)
+            end
+        end)
+    end
+end)
+
+circle.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        circleDragInput = input
+    end
+end)
+
+circle.MouseEnter:Connect(function() circle.BackgroundColor3 = LIGHT_GREEN end)
+circle.MouseLeave:Connect(function() circle.BackgroundColor3 = WHITE end)
+
+circle.MouseButton1Click:Connect(function()
+    if circleWasDragged then return end
+    main.Visible = not main.Visible
+    if main.Visible then
+        minimized = false
+        applyMinimizeState()
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if circleDragging and input == circleDragInput then updateCircleDrag(input) end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if circle.Parent then circle.Rotation = (circle.Rotation + dt * 90) % 360 end
+end)
+
+local home = pages["HOME"]
+local avatar = Instance.new("ImageLabel")
+avatar.Name = "Avatar"
+avatar.Size = UDim2.new(0, 80, 0, 80)
+avatar.Position = UDim2.new(0, 12, 0, 14)
+avatar.BackgroundColor3 = INPUT
+avatar.BorderSizePixel = 0
+avatar.Image = ""
+avatar.ZIndex = 12
+avatar.Parent = home
+round(avatar, 6)
+
+task.spawn(function()
+    local ok, image = pcall(function()
+        return Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+    end)
+    if ok and avatar.Parent then avatar.Image = image end
+end)
+
+local infoX = 108
+makeLabel(home, "Username : " .. player.Name, UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 8), Enum.Font.GothamBold, 15, WHITE)
+makeLabel(home, "DisplayName : " .. player.DisplayName, UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 32), Enum.Font.Gotham, 15, WHITE)
+makeLabel(home, "Age Days : " .. tostring(player.AccountAge) .. " Days", UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 56), Enum.Font.Gotham, 15, WHITE)
+makeLabel(home, "FE : Enabled!", UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 80), Enum.Font.GothamBold, 15, WHITE)
+local serverTimeLabel = makeLabel(home, "Server Time: 00:00:00", UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 104), Enum.Font.Gotham, 15, WHITE)
+local localTimeLabel = makeLabel(home, "Time: 00:00:00", UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 128), Enum.Font.Gotham, 15, WHITE)
+makeLabel(home, "Job ID: " .. tostring(game.JobId), UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 152), Enum.Font.Gotham, 15, WHITE)
+makeLabel(home, "ID места: " .. tostring(game.PlaceId), UDim2.new(1, -120, 0, 22), UDim2.new(0, infoX, 0, 176), Enum.Font.Gotham, 15, WHITE)
+
+local R6_ANIMS = {
+    idle = {"rbxassetid://180435571", "rbxassetid://180435792"}, walk = {"rbxassetid://180426354"}, run = {"rbxassetid://180426354"},
+    jump = {"rbxassetid://125750702"}, fall = {"rbxassetid://180436148"}, climb = {"rbxassetid://180436334"}, swim = {"rbxassetid://180426354"},
+}
+
+local R15_ANIMS = {
+    idle = {"rbxassetid://507766666", "rbxassetid://507766951"}, walk = {"rbxassetid://507777826"}, run = {"rbxassetid://507767714"},
+    jump = {"rbxassetid://507765000"}, fall = {"rbxassetid://507767968"}, climb = {"rbxassetid://507765644"}, swim = {"rbxassetid://507784897"},
+}
+
+local function getCharacterAndHumanoid()
+    local character = player.Character
+    if not character then return nil, nil end
+    return character, character:FindFirstChildOfClass("Humanoid")
+end
+
+local function applyAnimationPack(pack, successMessage)
+    local character, humanoid = getCharacterAndHumanoid()
+    if not character or not humanoid then return end
+    local animate = character:FindFirstChild("Animate")
+    if not animate then return end
+
+    for folderName, ids in pairs(pack) do
+        local folder = animate:FindFirstChild(folderName)
+        if folder then
+            local index = 1
+            for _, child in ipairs(folder:GetChildren()) do
+                if child:IsA("Animation") then
+                    child.AnimationId = ids[index] or ids[#ids]
+                    index += 1
+                end
+            end
+        end
+    end
+
+    for _, track in ipairs(humanoid:GetPlayingAnimationTracks()) do pcall(function() track:Stop(0.1) end) end
+    animate.Disabled = true
+    task.wait(0.08)
+    animate.Disabled = false
+end
+
+r6Btn.MouseButton1Click:Connect(function() applyAnimationPack(R6_ANIMS, "R6") end)
+r15Btn.MouseButton1Click:Connect(function() applyAnimationPack(R15_ANIMS, "R15") end)
+reBtn.MouseButton1Click:Connect(function()
+    local _, humanoid = getCharacterAndHumanoid()
+    if humanoid then
+        humanoid.Health = 0
+    end
+end)
+
+local serverLocal = pages["SERVER/LOCAL"]
+local modeLabel = makeLabel(serverLocal, "Режим: Local", UDim2.new(1, -20, 0, 26), UDim2.new(0, 10, 0, 12), Enum.Font.GothamBold, 17, WHITE)
+local serverBtn = makeOutlineButton(serverLocal, "SERVER", UDim2.new(0, 180, 0, 42), UDim2.new(0, 10, 0, 52))
+local localBtn = makeOutlineButton(serverLocal, "LOCAL", UDim2.new(0, 180, 0, 42), UDim2.new(0, 202, 0, 52))
+makeLabel(serverLocal, "Server — RemoteEvent, Local — loadstring", UDim2.new(1, -20, 0, 26), UDim2.new(0, 10, 0, 110), Enum.Font.Gotham, 14, WHITE)
+
+local function setMode(newMode)
+    mode = newMode
+    modeLabel.Text = "Режим: " .. mode
+    serverBtn.TextColor3 = mode == "Server" and GREEN_TEXT or WHITE
+    localBtn.TextColor3 = mode == "Local" and GREEN_TEXT or WHITE
+end
+
+serverBtn.MouseButton1Click:Connect(function() setMode("Server") end)
+localBtn.MouseButton1Click:Connect(function() setMode("Local") end)
+setMode("Local")
+
+local function executeCode(codeText)
+    if not codeText or codeText == "" then return end
+    if mode == "Server" then
+        if RemoteEvent then
+            RemoteEvent:FireServer(codeText)
+            return
+        end
+    end
+
+    local func, compileErr = loadstring(codeText)
+    if not func then return end
+    pcall(func)
+end
+
+local function runUrl(name, url)
+    local code
+    local ok, err = pcall(function() code = game:HttpGet(url) end)
+    if not ok or not code then return end
+    executeCode(code)
+end
+
+local function loadMyMap()
+    pcall(function()
+        local character = player.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local origin = root and root.Position or Vector3.new(0, 20, 0)
+
+        local plate = Instance.new("Part")
+        plate.Name = "MalwPolaria_MapPlate"
+        plate.Anchored = true
+        plate.Size = Vector3.new(600, 4, 600)
+        plate.Position = Vector3.new(origin.X, origin.Y - 10, origin.Z)
+        plate.Color = Color3.fromRGB(0, 80, 0)
+        plate.Material = Enum.Material.SmoothPlastic
+        plate.Parent = workspace
+
+        local objects = nil
+        local gotObjects = pcall(function() objects = game:GetObjects("rbxassetid://111318713256221") end)
+        if not gotObjects or not objects or #objects == 0 then
+            local asset = InsertService:LoadAsset(111318713256221)
+            objects = {asset}
+        end
+
+        for _, obj in ipairs(objects) do
+            obj.Parent = workspace
+            if obj:IsA("Model") then
+                obj:PivotTo(CFrame.new(origin.X, origin.Y - 5, origin.Z))
+            elseif obj:IsA("BasePart") then
+                obj.Anchored = true
+                obj.CFrame = CFrame.new(origin.X, origin.Y - 5, origin.Z)
+            end
+        end
+    end)
+end
+
+local scriptsPage = pages["SCRIPTS"]
+local scriptsScroll = Instance.new("ScrollingFrame")
+scriptsScroll.Name = "ScriptsScroll"
+scriptsScroll.Size = UDim2.new(1, -20, 1, -20)
+scriptsScroll.Position = UDim2.new(0, 10, 0, 10)
+scriptsScroll.BackgroundTransparency = 1
+scriptsScroll.BorderSizePixel = 0
+scriptsScroll.ScrollBarThickness = 5
+scriptsScroll.ScrollBarImageColor3 = GREEN
+scriptsScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scriptsScroll.Parent = scriptsPage
+
+local scriptsGrid = Instance.new("UIGridLayout")
+scriptsGrid.CellSize = UDim2.new(0, 176, 0, 38)
+scriptsGrid.CellPadding = UDim2.new(0, 8, 0, 8)
+scriptsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+scriptsGrid.Parent = scriptsScroll
+
+local scriptList = {
+    {name = "MY SCRIPT", special = "my_script"}, {name = "MY MAP", special = "my_map"},
+    {name = "LNicky f3x", url = "https://rawscripts.net/raw/Universal-Script-LNicky-Ultimate-F3X-Gui-42094"},
+    {name = "Infinite Yield", url = "https://cdn.wearedevs.net/scripts/Infinite%20Yield.txt"},
+    {name = "1x1x1x1", url = "https://rawscripts.net/raw/Universal-Script-1x1x1x1-gui-f3x-and-hd-admin-41931"},
+    {name = "Zoung GUI", url = "https://rawscripts.net/raw/Universal-Script-zoung-gui-private-edition-41511"},
+    {name = "Synapse X", url = "https://raw.githubusercontent.com/AZYsGithub/Chillz-s-scripts/main/Synapse-X-Remake.lua"},
+    {name = "SSP", url = "https://pastefy.app/t2gUwfXy/raw"},
+    {name = "Epik R6 Dancezz", url = "https://rawscripts.net/raw/Universal-Script-Epik-R6-Dancezz-42246"},
+    {name = "GhostHub", url = "https://raw.githubusercontent.com/GhostPlayer352/Test4/main/GhostHub"},
+    {name = "Client Sided GUI", url = "https://pastefy.app/kVLBGCjG/raw"},
+    {name = "ChatHax", url = "https://pastefy.app/8XhIoZYX/raw"},
+    {name = "Barry Prison FE TROLL", url = "https://pastebin.com/raw/a71y69Gr"},
+    {name = "g00byd0lan", url = "https://rawscripts.net/raw/Universal-Script-g00byd0lan-f3x-10362"},
+    {name = "HARKED REBORN V2", url = "https://rawscripts.net/raw/Live-Life-Rich-and-Famous-in-Paradise!-harked-that-only-work-for-this-game-8800"},
+    {name = "Lalol Hub", url = "https://rawscripts.net/raw/Universal-Script-Lalol-hub-30354"},
+    {name = "Bany Side", url = "https://rawscripts.net/raw/Universal-Script-Bany-side-28741"},
+    {name = "Dex", url = "https://rawscripts.net/raw/Universal-Script-REAL-DEX-EXPLORER-DONT-BE-SCAMMED-41800"},
+    {name = "SCP-096", url = "https://pastefy.app/YsJgITXR/raw"},
+    {name = "Black Hole", url = "https://raw.githubusercontent.com/Bac0nHck/Scripts/main/BringFlingPlayers"},
+    {name = "Sonic.exe", url = "https://pastefy.app/jRSu2UQR/raw"},
+    {name = "Brookhaven SS", url = "https://scriptblox.com/raw/Brookhaven-RP-R4D-TROLL-NO-KEY-17625"},
+    {name = "Sypcerr", url = "https://raw.githubusercontent.com/sypcerr/FECollection/refs/heads/main/script.lua"},
+    {name = "Fly GUI v3", url = "https://rawscripts.net/raw/Universal-Script-Gui-Fly-v3-37111"},
+    {name = "c00lgui", url = "https://rawscripts.net/raw/Universal-Script-C00lgui-f3x-9682"},
+    {name = "FE Bypass", url = "https://pastebin.com/raw/DxMwPkXH"},
+    {name = "Energize", url = "https://rawscripts.net/raw/a-literal-baseplate.-energize-gui-24798"},
+}
+
+local function updateScriptsCanvas()
+    scriptsScroll.CanvasSize = UDim2.new(0, 0, 0, scriptsGrid.AbsoluteContentSize.Y + 12)
+end
+
+scriptsGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateScriptsCanvas)
+
+for i, scriptInfo in ipairs(scriptList) do
+    local btn = makeOutlineButton(scriptsScroll, scriptInfo.name, UDim2.new(0, 176, 0, 38), UDim2.new())
+    btn.LayoutOrder = i
+    btn.TextSize = scriptInfo.special and 15 or 13
+    btn.TextColor3 = scriptInfo.special and GREEN_TEXT or WHITE
+    btn.Font = scriptInfo.special and Enum.Font.GothamBlack or Enum.Font.GothamBold
+    btn.MouseButton1Click:Connect(function()
+        if scriptInfo.special == "my_script" then
+            executeCode(MY_SCRIPT_CODE)
+        elseif scriptInfo.special == "my_map" then
+            loadMyMap()
+        else
+            runUrl(scriptInfo.name, scriptInfo.url)
+        end
+    end)
+end
+
+updateScriptsCanvas()
+
+local executorPage = pages["EXECUTOR"]
+local codeScroll = Instance.new("ScrollingFrame")
+codeScroll.Name = "CodeScroll"
+codeScroll.Size = UDim2.new(1, -20, 1, -62)
+codeScroll.Position = UDim2.new(0, 10, 0, 10)
+codeScroll.BackgroundColor3 = INPUT
+codeScroll.BorderSizePixel = 0
+codeScroll.ScrollBarThickness = 5
+codeScroll.ScrollBarImageColor3 = GREEN
+codeScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+codeScroll.Parent = executorPage
+round(codeScroll, 4)
+
+local codeBox = Instance.new("TextBox")
+codeBox.Name = "CodeBox"
+codeBox.Size = UDim2.new(1, -16, 1, -16)
+codeBox.Position = UDim2.new(0, 8, 0, 8)
+codeBox.BackgroundTransparency = 1
+codeBox.Text = ""
+codeBox.PlaceholderText = "-- Paste your Lua code here..."
+codeBox.PlaceholderColor3 = GREEN
+codeBox.TextColor3 = GREEN_TEXT
+codeBox.Font = Enum.Font.Code
+codeBox.TextSize = 14
+codeBox.TextXAlignment = Enum.TextXAlignment.Left
+codeBox.TextYAlignment = Enum.TextYAlignment.Top
+codeBox.TextWrapped = true
+codeBox.ClearTextOnFocus = false
+codeBox.MultiLine = true
+codeBox.Parent = codeScroll
+
+local executeBtn = makeOutlineButton(executorPage, "Execute", UDim2.new(0, 120, 0, 36), UDim2.new(0, 10, 1, -40))
+local clearBtn = makeOutlineButton(executorPage, "Clear", UDim2.new(0, 120, 0, 36), UDim2.new(0, 140, 1, -40))
+local copyBtn = makeOutlineButton(executorPage, "Copy", UDim2.new(0, 120, 0, 36), UDim2.new(0, 270, 1, -40))
+
+executeBtn.MouseButton1Click:Connect(function() executeCode(codeBox.Text) end)
+clearBtn.MouseButton1Click:Connect(function() codeBox.Text = "" end)
+copyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then setclipboard(codeBox.Text) end
+end)
+
+local elapsed = 0
+RunService.Heartbeat:Connect(function(dt)
+    elapsed += dt
+    if elapsed < 1 then return end
+    elapsed = 0
+    local current = os.date("%H:%M:%S")
+    serverTimeLabel.Text = "Server Time: " .. current
+    localTimeLabel.Text = "Time: " .. current
+end)
+
+selectTab("HOME")
+applyMinimizeState()
